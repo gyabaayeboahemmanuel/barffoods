@@ -21,12 +21,12 @@ export default function Footer() {
 
   return (
     <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="space-y-3">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">B</div>
-              <span className="text-lg font-semibold text-gray-900 dark:text-white">BarfFoods</span>
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md">B</div>
+              <span className="text-lg font-semibold text-gray-900 dark:text-white tracking-tight">BarfFoods</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Fresh groceries delivered to your doorstep. Quality products from local stores.

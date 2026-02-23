@@ -83,15 +83,15 @@ export default function Navigation() {
     }, []);
 
     return (
-        <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700/80 shadow-sm">
+        <nav className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700/80 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-14 gap-4">
+                <div className="flex items-center justify-between h-16 gap-4">
                     {/* Logo - left */}
-                    <Link href="/" className="flex items-center gap-2 shrink-0">
-                        <div className="w-9 h-9 bg-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
+                    <Link href="/" className="flex items-center gap-2.5 shrink-0">
+                        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-md">
                             <ShoppingCart className="h-5 w-5 text-white" />
                         </div>
-                        <span className="text-lg font-bold text-gray-900 dark:text-white hidden sm:inline">BarfFoods</span>
+                        <span className="text-xl font-bold text-gray-900 dark:text-white hidden sm:inline tracking-tight">BarfFoods</span>
                     </Link>
 
                     {/* Search - center, flexible */}
@@ -189,7 +189,7 @@ export default function Navigation() {
                                 <span className="sm:hidden">Dash</span>
                             </Link>
                         ) : (
-                            <Link href={login.url()} className="btn-primary-bs bg-emerald-600 text-white hover:bg-emerald-700 px-3 sm:px-4 py-2 text-sm">
+                            <Link href={login.url()} className="btn-primary-bs bg-emerald-600 text-white hover:bg-emerald-700 px-4 sm:px-5 py-2.5 text-sm rounded-xl shadow-md">
                                 Login
                             </Link>
                         )}

@@ -66,14 +66,14 @@ class SystemSettingsSeeder extends Seeder
         SystemSetting::set(
             'store_address',
             json_encode([
-                'street_address' => '123 Main Street',
-                'city' => 'New York',
-                'state' => 'NY',
-                'zip_code' => '10001',
+                'street_address' => 'Washington, D.C. Area',
+                'city' => 'Washington',
+                'state' => 'DC',
+                'zip_code' => '20001',
                 'country' => 'US',
                 'company_name' => 'BarfFoods',
-                'phone' => '+1 (555) 123-4567',
-                'email' => 'orders@barffoods.com'
+                'phone' => '(202) 590-1404',
+                'email' => 'patriksolutions@gmail.com'
             ]),
             'json',
             'Store address used as shipping origin for all orders'
@@ -148,10 +148,10 @@ class SystemSettingsSeeder extends Seeder
         SystemSetting::set(
             'contact_info',
             json_encode([
-                'email' => 'support@grocerybazar.com',
-                'phone' => '+1 (555) 123-4567',
-                'address' => '123 Market Street, City, State 12345',
-                'business_hours' => 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday - Sunday: 10:00 AM - 4:00 PM'
+                'email' => 'patriksolutions@gmail.com',
+                'phone' => '(202) 590-1404',
+                'address' => 'United States',
+                'business_hours' => 'Monday - Friday: 9:00 AM - 6:00 PM'
             ]),
             'json',
             'Contact information displayed on the contact page'

@@ -76,6 +76,15 @@ export default function Welcome() {
     const [locationBannerDismissed, setLocationBannerDismissed] = useState(false);
     const [locationInput, setLocationInput] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [showUpdateBanner, setShowUpdateBanner] = useState(true);
+
+    useEffect(() => {
+        try {
+            setShowUpdateBanner(sessionStorage.getItem('barffoods_hide_update_banner') !== '1');
+        } catch (_) {
+            setShowUpdateBanner(true);
+        }
+    }, []);
 
     // No longer show location modal automatically — let users browse first.
     // They can set location via the optional banner or from the map section.
@@ -226,7 +235,7 @@ export default function Welcome() {
             <Head title="BarfFoods - Fresh Groceries Delivered">
                 <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link
-                    href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600"
+                    href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|instrument-sans:400,500,600"
                     rel="stylesheet"
                 />
             </Head>
@@ -247,7 +256,7 @@ export default function Welcome() {
                                 <div className="flex items-center gap-2 shrink-0">
                                     <button
                                         onClick={() => setShowLocationModal(true)}
-                                        className="px-3 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                                        className="px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-md"
                                     >
                                         Set location
                                     </button>
@@ -307,7 +316,7 @@ export default function Welcome() {
                                 <button
                                     onClick={saveLocation}
                                     disabled={isSearching || !locationInput.trim()}
-                                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:pointer-events-none text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:pointer-events-none text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md"
                                 >
                                     {isSearching ? (
                                         <>
@@ -332,7 +341,7 @@ export default function Welcome() {
                                 <button
                                     onClick={useAutoDetect}
                                     disabled={isSearching}
-                                    className="w-full py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                                    className="w-full py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
                                 >
                                     <NavigationIcon className="h-4 w-4" />
                                     <span>Use my location</span>
@@ -357,32 +366,40 @@ export default function Welcome() {
                 
                 <Navigation />
 
+                {/* Announcement: home page updated */}
+                {showUpdateBanner && (
+                    <div id="home-update-banner" className="bg-emerald-500/10 dark:bg-emerald-500/20 border-b border-emerald-200/60 dark:border-emerald-800/40">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+                            <div className="flex items-center justify-center gap-2 text-sm text-emerald-800 dark:text-emerald-200 flex-wrap">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium">Updated</span>
+                                <span>We’ve refreshed the home page — easier to browse and find what you need.</span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        try { sessionStorage.setItem('barffoods_hide_update_banner', '1'); } catch (_) {}
+                                        setShowUpdateBanner(false);
+                                    }}
+                                    className="ml-1 p-1 rounded hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                    aria-label="Dismiss"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                     <HeroCarousel />
                 </section>
 
-                {/* Features Section */}
-                <FeaturesSection />
-
-                {/* Shop By Category */}
+                {/* Shop by category — right after hero */}
                 <ShopByCategory 
                     onCategorySelect={setSelectedCategory} 
                     selectedCategory={selectedCategory}
                 />
 
-                {/* Shop By Store */}
-                <ShopByStore 
-                    onStoreSelect={(storeName) => {
-                        setSelectedStores(prev => 
-                            prev.includes(storeName) 
-                                ? prev.filter(s => s !== storeName)
-                                : [...prev, storeName]
-                        );
-                    }}
-                    selectedStores={selectedStores}
-                />
-
-                {/* Product Section */}
+                {/* Product Section — right after categories */}
                 <div id="products">
                     <ProductSection 
                         nearbyStores={props.nearbyStores}
@@ -395,6 +412,21 @@ export default function Welcome() {
                         onStoresChange={setSelectedStores}
                     />
                 </div>
+
+                {/* Shop by store */}
+                <ShopByStore 
+                    onStoreSelect={(storeName) => {
+                        setSelectedStores(prev => 
+                            prev.includes(storeName) 
+                                ? prev.filter(s => s !== storeName)
+                                : [...prev, storeName]
+                        );
+                    }}
+                    selectedStores={selectedStores}
+                />
+
+                {/* Why choose us — above location/map */}
+                <FeaturesSection />
                 
                 {/* Store Locations & Delivery Zones */}
                 <StoreLocationsMap defaultMapLocation={props.defaultMapLocation} onOpenLocationModal={() => setShowLocationModal(true)} />

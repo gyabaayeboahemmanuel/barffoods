@@ -42,12 +42,12 @@ class HandleInertiaRequests extends Middleware
         // Get store address from system settings
         $storeAddress = SystemSetting::get('store_address', [
             'company_name' => 'BarfFoods',
-            'phone' => '+1 (555) 123-4567',
-            'email' => 'support@barffoods.com',
-            'street_address' => '123 Grocery Street',
-            'city' => 'Food City',
-            'state' => 'FC',
-            'zip_code' => '12345',
+            'phone' => '(202) 590-1404',
+            'email' => 'patriksolutions@gmail.com',
+            'street_address' => 'Washington, D.C. Area',
+            'city' => 'Washington',
+            'state' => 'DC',
+            'zip_code' => '20001',
             'country' => 'US'
         ]);
 

@@ -25,8 +25,10 @@ export default function FeaturesSection() {
   ];
 
   return (
-    <section className="py-8 bg-gray-50/80 dark:bg-gray-800/30 border-y border-gray-200/80 dark:border-gray-700/50">
+    <section className="py-10 bg-gray-50/80 dark:bg-gray-800/30 border-y border-gray-200/80 dark:border-gray-700/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="section-title text-center mb-2">Why choose us</h2>
+        <p className="section-subtitle text-center mb-8">Fast, fresh, and reliable</p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {features.map((feature, index) => {
             const IconComponent = feature.icon;

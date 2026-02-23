@@ -98,11 +98,10 @@ export default function ShopByCategory({ onCategorySelect, selectedCategory }: S
     }, [isHovered]);
 
     return (
-        <div className="w-full py-8 bg-gray-50/80 dark:bg-gray-900/50">
+        <div className="w-full py-10 bg-gray-50/80 dark:bg-gray-900/50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white text-center mb-6">
-                    Shop by category
-                </h2>
+                <h2 className="section-title text-center mb-2">Shop by category</h2>
+                <p className="section-subtitle text-center mb-6">Browse our range of fresh products</p>
 
                 <div className="relative overflow-hidden">
                     <div

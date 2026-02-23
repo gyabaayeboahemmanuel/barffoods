@@ -86,21 +86,21 @@ export default function ProductCard({
                 };
             default:
                 return {
-                    container: 'card-bs p-3 sm:p-4 hover:shadow-md transition-shadow duration-200 group relative',
-                    image: 'h-40 sm:h-44 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden mb-3',
-                    icon: 'text-4xl sm:text-6xl opacity-80 group-hover:scale-110 transition-transform duration-300',
-                    title: 'text-xs sm:text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight',
-                    price: 'text-base sm:text-lg font-bold text-gray-900 dark:text-white',
-                    originalPrice: 'text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-through',
+                    container: 'card-bs p-4 sm:p-5 group relative overflow-hidden',
+                    image: 'h-44 sm:h-52 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden mb-4',
+                    icon: 'text-4xl sm:text-6xl opacity-90 group-hover:scale-105 transition-transform duration-300',
+                    title: 'text-sm sm:text-base font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug',
+                    price: 'text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400',
+                    originalPrice: 'text-sm text-gray-500 dark:text-gray-400 line-through ml-1',
                     rating: 'text-xs sm:text-sm',
                     reviews: 'text-xs text-gray-500 dark:text-gray-400',
                     store: 'text-xs text-gray-600 dark:text-gray-400',
                     category: 'text-xs text-gray-600 dark:text-gray-400',
-                    wishlistButton: 'w-7 h-7 sm:w-8 sm:h-8 rounded-full',
-                    wishlistIcon: 'h-3 w-3 sm:h-4 sm:w-4',
-                    addToCartButton: 'w-8 h-8 sm:w-9 sm:h-9 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center shadow-sm hover:shadow transition-all duration-200 group-hover:scale-105',
+                    wishlistButton: 'w-8 h-8 sm:w-9 sm:h-9 rounded-full',
+                    wishlistIcon: 'h-4 w-4 sm:h-5 sm:w-5',
+                    addToCartButton: 'w-9 h-9 sm:w-10 sm:h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 group-hover:scale-105',
                     addToCartIcon: 'h-4 w-4 sm:h-5 sm:w-5',
-                    badge: 'px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full'
+                    badge: 'px-2 py-1 text-xs font-medium rounded-lg'
                 };
         }
     };

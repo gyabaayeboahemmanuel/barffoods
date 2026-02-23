@@ -15,10 +15,10 @@ class ContactController extends Controller
     {
         // Get contact information from system settings
         $contactInfo = SystemSetting::get('contact_info', [
-            'email' => 'support@grocerybazar.com',
-            'phone' => '+1 (555) 123-4567',
-            'address' => '123 Market Street, City, State 12345',
-            'business_hours' => 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday - Sunday: 10:00 AM - 4:00 PM'
+            'email' => 'patriksolutions@gmail.com',
+            'phone' => '(202) 590-1404',
+            'address' => 'United States',
+            'business_hours' => 'Monday - Friday: 9:00 AM - 6:00 PM'
         ]);
 
         return Inertia::render('contact', [

@@ -643,22 +643,22 @@ export default function StoreLocationsMap({ defaultMapLocation, onOpenLocationMo
   const currentZone = userLocation ? isInDeliveryZone(userLocation) : null;
 
   return (
-    <section className="py-16 bg-gray-50 dark:bg-gray-800/50">
+    <section className="py-8 bg-gray-50 dark:bg-gray-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+        {/* Section Header - compact */}
+        <div className="text-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
             Store Locations & Delivery Zones
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Find stores near you and check delivery availability in your area
+          <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            Find stores near you
             {onOpenLocationModal && (
               <>
                 {' · '}
                 <button
                   type="button"
                   onClick={onOpenLocationModal}
-                  className="text-green-600 dark:text-green-400 hover:underline font-medium"
+                  className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
                 >
                   Set your location
                 </button>
@@ -667,14 +667,14 @@ export default function StoreLocationsMap({ defaultMapLocation, onOpenLocationMo
           </p>
         </div>
 
-        {/* Interactive Map - Landscape Layout */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden mb-8">
-          <div className="h-96 relative">
+        {/* Interactive Map - small */}
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden mb-4">
+          <div className="h-40 relative">
             {/* Leaflet Map Container */}
             <div
               ref={mapRef}
               className="w-full h-full relative"
-              style={{ minHeight: '384px' }}
+              style={{ minHeight: '160px' }}
             >
               {/* Loading State */}
               {!leafletMap && mapLoaded && (
@@ -818,11 +818,11 @@ export default function StoreLocationsMap({ defaultMapLocation, onOpenLocationMo
           </div>
         </div>
 
-        {/* Location Search Input - Above Store Information */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-lg mb-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <MapPin className="h-6 w-6 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Search Location</h3>
+        {/* Location Search Input - compact */}
+        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow mb-4">
+          <div className="flex items-center space-x-3 mb-3">
+            <MapPin className="h-5 w-5 text-emerald-600" />
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Search Location</h3>
           </div>
           
           {savedLocationInfo && (
@@ -901,13 +901,13 @@ export default function StoreLocationsMap({ defaultMapLocation, onOpenLocationMo
           </p>
         </div>
 
-        {/* Store Information - Below Map */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Store Information - compact grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* User Location Status */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-lg">
-            <div className="flex items-center space-x-3 mb-4">
-              <Navigation className="h-6 w-6 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Your Location</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow">
+            <div className="flex items-center space-x-3 mb-3">
+              <Navigation className="h-5 w-5 text-emerald-600" />
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Your Location</h3>
             </div>
             
             {userLocation && (
@@ -955,10 +955,10 @@ export default function StoreLocationsMap({ defaultMapLocation, onOpenLocationMo
 
           {/* Selected Store Details */}
           {selectedStore && (
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-lg">
-              <div className="flex items-center space-x-3 mb-4">
-                <Store className="h-6 w-6 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Selected Store</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow">
+              <div className="flex items-center space-x-3 mb-3">
+                <Store className="h-5 w-5 text-blue-600" />
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Selected Store</h3>
               </div>
               
               <div className="space-y-3">
@@ -996,8 +996,8 @@ export default function StoreLocationsMap({ defaultMapLocation, onOpenLocationMo
           )}
 
           {/* Nearby Stores List */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-lg">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
               Stores Near You
             </h3>
             

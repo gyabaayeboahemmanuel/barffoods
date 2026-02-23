@@ -381,7 +381,7 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                                 onClick={() => handlePageChange(page as number)}
                                 className={`min-w-[40px] h-10 rounded-lg font-medium transition-all ${
                                     currentPage === page
-                                        ? 'bg-green-600 text-white shadow-md'
+                                        ? 'bg-emerald-600 text-white shadow-md'
                                         : 'text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm'
                                 }`}
                             >
@@ -497,7 +497,7 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={clearFilters}
-                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl"
+                    className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-lg hover:shadow-xl"
                 >
                     Clear All Filters
                 </motion.button>
@@ -515,7 +515,7 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                         transition={{ duration: 0.5 }}
                         className="flex items-center gap-3 mb-6"
                     >
-                        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                        <h2 className="section-title">
                             Products
                         </h2>
                         <motion.div
@@ -529,7 +529,7 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                                 repeatDelay: 3
                             }}
                         >
-                            <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
+                            <Sparkles className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                         </motion.div>
                     </motion.div>
                     
@@ -634,14 +634,14 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 exit={{ opacity: 0, scale: 0.8 }}
                                                 transition={{ delay: index * 0.05 }}
-                                                className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 shadow-sm"
+                                                className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 shadow-sm"
                                             >
                                                 {storeName}
                                                 <motion.button
                                                     whileHover={{ scale: 1.2, rotate: 90 }}
                                                     whileTap={{ scale: 0.9 }}
                                                     onClick={() => setSelectedStores(prev => prev.filter(name => name !== storeName))}
-                                                    className="ml-2 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 font-bold"
+                                                    className="ml-2 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 font-bold"
                                                 >
                                                     ×
                                                 </motion.button>
@@ -669,9 +669,9 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                                     className="cursor-pointer"
                                 >
                                     <span>All Categories</span>
-                                    {selectedCategory === "All Categories" && (
-                                        <Check className="h-4 w-4 ml-auto text-green-600" />
-                                    )}
+                                        {selectedCategory === "All Categories" && (
+                                            <Check className="h-4 w-4 ml-auto text-emerald-600" />
+                                        )}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 {categories.map((category) => (
@@ -685,7 +685,7 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                                     >
                                         <span>{category.name}</span>
                                         {selectedCategory === category.name && (
-                                            <Check className="h-4 w-4 ml-auto text-green-600" />
+                                            <Check className="h-4 w-4 ml-auto text-emerald-600" />
                                         )}
                                     </DropdownMenuItem>
                                 ))}
@@ -709,7 +709,7 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                                     >
                                         <span>{option}</span>
                                         {selectedSort === option && (
-                                            <Check className="h-4 w-4 ml-auto text-green-600" />
+                                            <Check className="h-4 w-4 ml-auto text-emerald-600" />
                                         )}
                                     </DropdownMenuItem>
                                 ))}
@@ -732,7 +732,7 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                     transition={{ duration: 0.5 }}
                     className="flex items-center gap-3 mb-6"
                 >
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                    <h2 className="section-title">
                         Products
                     </h2>
                     <motion.div
@@ -746,13 +746,13 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                             repeatDelay: 3
                         }}
                     >
-                        <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        <Sparkles className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                     </motion.div>
                     {displayedProducts.length > 0 && (
                         <motion.span
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-sm font-medium"
+                            className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 rounded-full text-sm font-medium"
                         >
                             {displayedProducts.length} {displayedProducts.length === 1 ? 'product' : 'products'}
                         </motion.span>
@@ -836,7 +836,7 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                                         )}
                                     </div>
                                     {selectedStores.includes(store.name) && (
-                                        <Check className="h-4 w-4 ml-auto text-green-600" />
+                                        <Check className="h-4 w-4 ml-auto text-emerald-600" />
                                     )}
                                 </DropdownMenuItem>
                             ))}
@@ -860,14 +860,14 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 exit={{ opacity: 0, scale: 0.8 }}
                                                 transition={{ delay: index * 0.05 }}
-                                                className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 shadow-sm"
+                                                className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300 shadow-sm"
                                             >
                                                 {storeName}
                                                 <motion.button
                                                     whileHover={{ scale: 1.2, rotate: 90 }}
                                                     whileTap={{ scale: 0.9 }}
                                                     onClick={() => setSelectedStores(prev => prev.filter(name => name !== storeName))}
-                                                    className="ml-2 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 font-bold"
+                                                    className="ml-2 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 font-bold"
                                                 >
                                                     ×
                                                 </motion.button>
@@ -895,9 +895,9 @@ export default function ProductSection({ nearbyStores, allStores, initialProduct
                                 className="cursor-pointer"
                             >
                                 <span>All Categories</span>
-                                {selectedCategory === "All Categories" && (
-                                    <Check className="h-4 w-4 ml-auto text-green-600" />
-                                )}
+                                        {selectedCategory === "All Categories" && (
+                                            <Check className="h-4 w-4 ml-auto text-emerald-600" />
+                                        )}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {categories.map((category) => (
