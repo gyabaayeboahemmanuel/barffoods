@@ -202,7 +202,8 @@ class CheckoutController extends Controller
                     'name' => $cartItem['product']['name'],
                     'images' => $this->getValidImageUrls($cartItem['product']['image']),
                 ];
-                $description = trim($cartItem['product']['description'] ?? '');
+                // Stripe rejects empty string for description; only include when non-empty
+                $description = trim((string) ($cartItem['product']['description'] ?? ''));
                 if ($description !== '') {
                     $productData['description'] = $description;
                 }
