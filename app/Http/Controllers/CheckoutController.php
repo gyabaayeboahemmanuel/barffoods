@@ -18,6 +18,7 @@ use App\Services\ShippingService;
 use App\Services\InventoryService;
 use App\Services\AuditService;
 use App\Services\NotificationService;
+use App\Services\GuestCheckoutService;
 use App\Jobs\ProcessStripePaymentJob;
 use App\Jobs\ProcessRefundJob;
 use Illuminate\Http\Request;
@@ -36,6 +37,7 @@ class CheckoutController extends Controller
     protected $inventoryService;
     protected $auditService;
     protected $notificationService;
+    protected $guestCheckoutService;
 
     public function __construct(
         CartCalculationService $cartCalculationService,
@@ -44,7 +46,8 @@ class CheckoutController extends Controller
         StripeService $stripeService,
         InventoryService $inventoryService,
         AuditService $auditService,
-        NotificationService $notificationService
+        NotificationService $notificationService,
+        GuestCheckoutService $guestCheckoutService
     ) {
         $this->cartCalculationService = $cartCalculationService;
         $this->discountService = $discountService;
@@ -53,6 +56,7 @@ class CheckoutController extends Controller
         $this->inventoryService = $inventoryService;
         $this->auditService = $auditService;
         $this->notificationService = $notificationService;
+        $this->guestCheckoutService = $guestCheckoutService;
     }
 
     /**
@@ -103,15 +107,12 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Create Stripe Checkout Session
+     * Create Stripe Checkout Session.
+     * Supports both authenticated users and guests (guest provides email + optional name).
      */
     public function createCheckoutSession(Request $request)
     {
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Authentication required'], 401);
-        }
-
-        $request->validate([
+        $rules = [
             'type' => 'required|in:home,work,other',
             'label' => 'nullable|string|max:255',
             'street_address' => 'required|string|max:255',
@@ -120,39 +121,41 @@ class CheckoutController extends Controller
             'zip_code' => 'required|string|max:20',
             'delivery_instructions' => 'nullable|string|max:1000',
             'shipping_method' => 'required|string',
-            'carrier_id' => 'nullable|string', // EasyPost rate_id
+            'carrier_id' => 'nullable|string',
             'carrier_name' => 'nullable|string',
             'carrier_service' => 'nullable|string',
             'carrier_cost' => 'nullable|numeric',
             'discount_code' => 'nullable|string|max:50',
             'save_address' => 'boolean',
-        ]);
+        ];
 
-        // Debug what we're receiving
+        if (! Auth::check()) {
+            $rules['email'] = 'required|string|email|max:255';
+            $rules['name'] = 'nullable|string|max:255';
+        }
+
+        $request->validate($rules);
+
         \Log::info('CreateCheckoutSession - Received Data', [
             'shipping_method' => $request->shipping_method,
             'carrier_id' => $request->carrier_id,
-            'carrier_name' => $request->carrier_name,
-            'carrier_service' => $request->carrier_service,
-            'carrier_cost' => $request->carrier_cost,
-            'all_request_data' => $request->all(),
+            'guest' => ! Auth::check(),
         ]);
 
         try {
-            // Get cart items
-            $cartItems = $this->getAuthenticatedUserCartItems();
-            
+            $cartItems = Auth::check()
+                ? $this->getAuthenticatedUserCartItems()
+                : $this->getAnonymousCartItems();
+
             if ($cartItems->isEmpty()) {
                 return response()->json(['error' => 'Cart is empty'], 400);
             }
 
-            // Calculate totals
             $calculations = $this->cartCalculationService->calculateCartTotals(
-                $cartItems->toArray(), 
+                $cartItems->toArray(),
                 Auth::id()
             );
 
-            // Only create address if user wants to save it
             $userAddress = null;
             $addressData = [
                 'type' => $request->type ?? 'home',
@@ -164,43 +167,35 @@ class CheckoutController extends Controller
                 'delivery_instructions' => $request->delivery_instructions,
             ];
 
-            if ($request->save_address) {
-                // Create address with full data including user_id and defaults
+            if (Auth::check() && $request->save_address) {
                 $fullAddressData = array_merge($addressData, [
                     'user_id' => Auth::id(),
-                    'is_default' => !UserAddress::where('user_id', Auth::id())->where('is_default', true)->exists(),
+                    'is_default' => ! UserAddress::where('user_id', Auth::id())->where('is_default', true)->exists(),
                     'is_active' => true,
                 ]);
-
                 $userAddress = $this->addressService->createAddress($fullAddressData);
             }
 
-            // Store checkout data in session for later use
             $checkoutData = [
                 'address_data' => $addressData,
                 'user_address_id' => $userAddress ? $userAddress->id : null,
                 'cart_items' => $cartItems->toArray(),
                 'calculations' => $calculations,
                 'shipping_method' => $request->shipping_method,
-                'carrier_id' => $request->carrier_id, // EasyPost rate_id
+                'carrier_id' => $request->carrier_id,
                 'carrier_name' => $request->carrier_name,
                 'carrier_service' => $request->carrier_service,
                 'carrier_cost' => $request->carrier_cost,
                 'discount_code' => $request->discount_code,
             ];
-            
-            session(['checkout_data' => $checkoutData]);
-            
-            // Debug what we're storing in session
-            \Log::info('CreateCheckoutSession - Storing in Session', [
-                'shipping_method' => $checkoutData['shipping_method'],
-                'carrier_id' => $checkoutData['carrier_id'],
-                'carrier_name' => $checkoutData['carrier_name'],
-                'carrier_service' => $checkoutData['carrier_service'],
-                'carrier_cost' => $checkoutData['carrier_cost'],
-            ]);
 
-            // Prepare line items for Stripe Checkout
+            if (! Auth::check()) {
+                $checkoutData['guest_email'] = $request->input('email');
+                $checkoutData['guest_name'] = $request->input('name');
+            }
+
+            session(['checkout_data' => $checkoutData]);
+
             $lineItems = [];
             foreach ($cartItems as $cartItem) {
                 $lineItems[] = [
@@ -217,42 +212,52 @@ class CheckoutController extends Controller
                 ];
             }
 
-            // Add delivery fee if applicable
             if ($calculations['delivery_fee'] > 0) {
                 $lineItems[] = [
                     'price_data' => [
                         'currency' => 'usd',
-                        'product_data' => [
-                            'name' => 'Delivery Fee',
-                        ],
+                        'product_data' => ['name' => 'Delivery Fee'],
                         'unit_amount' => $this->convertToCents($calculations['delivery_fee']),
                     ],
                     'quantity' => 1,
                 ];
             }
 
-            // Add tax if applicable
             if ($calculations['tax'] > 0) {
                 $lineItems[] = [
                     'price_data' => [
                         'currency' => 'usd',
-                        'product_data' => [
-                            'name' => 'Tax',
-                        ],
+                        'product_data' => ['name' => 'Tax'],
                         'unit_amount' => $this->convertToCents($calculations['tax']),
                     ],
                     'quantity' => 1,
                 ];
             }
 
-            // Session data already stored above with carrier information
+            $customerEmail = Auth::check()
+                ? Auth::user()->email
+                : $request->input('email');
 
-            // Create Stripe Checkout Session with minimal metadata
-            $checkoutData = [
+            $metadata = [
+                'cart_items_count' => count($cartItems),
+                'session_id' => session()->getId(),
+                'shipping_method' => $request->shipping_method,
+                'carrier_name' => $request->carrier_name,
+                'carrier_service' => $request->carrier_service,
+                'carrier_cost' => $request->carrier_cost,
+                'carrier_id' => $request->carrier_id,
+            ];
+            if (Auth::check()) {
+                $metadata['user_id'] = Auth::id();
+            } else {
+                $metadata['guest_email'] = $request->input('email');
+            }
+
+            $stripeCheckoutData = [
                 'line_items' => $lineItems,
                 'success_url' => url('/checkout/success?session_id={CHECKOUT_SESSION_ID}'),
                 'cancel_url' => url('/checkout'),
-                'customer_email' => Auth::user()->email,
+                'customer_email' => $customerEmail,
                 'shipping_address' => [
                     'line1' => $request->street_address,
                     'city' => $request->city,
@@ -260,19 +265,10 @@ class CheckoutController extends Controller
                     'postal_code' => $request->zip_code,
                     'country' => 'US',
                 ],
-                'metadata' => [
-                    'user_id' => Auth::id(),
-                    'cart_items_count' => count($cartItems),
-                    'session_id' => session()->getId(),
-                    'shipping_method' => $request->shipping_method,
-                    'carrier_name' => $request->carrier_name,
-                    'carrier_service' => $request->carrier_service,
-                    'carrier_cost' => $request->carrier_cost,
-                    'carrier_id' => $request->carrier_id,
-                ],
+                'metadata' => $metadata,
             ];
 
-            $result = $this->stripeService->createCheckoutSession($checkoutData);
+            $result = $this->stripeService->createCheckoutSession($stripeCheckoutData);
 
             if ($result['success']) {
                 return response()->json([
@@ -337,19 +333,24 @@ class CheckoutController extends Controller
 
             // Get checkout data from session
             $checkoutData = session('checkout_data');
-            
-            // If session data is missing, reconstruct from Stripe session and current cart
-            if (!$checkoutData) {
+
+            // If session data is missing: for guest we cannot reconstruct; for auth we try
+            if (! $checkoutData) {
+                if (! Auth::check()) {
+                    \Log::error('Guest checkout session data missing', ['session_id' => $sessionId]);
+                    ProcessRefundJob::dispatch($session->payment_intent, null, 'Guest checkout session data lost');
+                    return redirect('/checkout')->with('error', 'Checkout session expired. Refund will be processed automatically.');
+                }
+
                 \Log::warning('Session data missing, reconstructing from Stripe and cart', [
                     'session_id' => $sessionId,
                     'user_id' => Auth::id(),
                 ]);
-                
-                // Get current cart items
+
                 $cartItems = CartItem::where('user_id', Auth::id())
                     ->with(['product.store', 'product.category'])
                     ->get();
-                
+
                 if ($cartItems->isEmpty()) {
                     \Log::error('Cart is empty during checkout success', [
                         'session_id' => $sessionId,
@@ -358,20 +359,15 @@ class CheckoutController extends Controller
                     ProcessRefundJob::dispatch($session->payment_intent, null, 'Cart empty during checkout completion');
                     return redirect('/checkout')->with('error', 'Your cart is empty. Refund will be processed automatically.');
                 }
-                
-                // Get address from Stripe session
+
                 $shippingAddress = $session->shipping_details->address ?? $session->customer_details->address ?? null;
-                
-                if (!$shippingAddress) {
-                    \Log::error('No shipping address in Stripe session', [
-                        'session_id' => $sessionId,
-                    ]);
+                if (! $shippingAddress) {
+                    \Log::error('No shipping address in Stripe session', ['session_id' => $sessionId]);
                     ProcessRefundJob::dispatch($session->payment_intent, null, 'No shipping address found');
                     return redirect('/checkout')->with('error', 'Shipping address not found. Refund will be processed automatically.');
                 }
-                
-                // Find or create user address
-                $userAddress = \App\Models\UserAddress::firstOrCreate([
+
+                $userAddress = UserAddress::firstOrCreate([
                     'user_id' => Auth::id(),
                     'street_address' => $shippingAddress->line1,
                     'city' => $shippingAddress->city,
@@ -383,22 +379,17 @@ class CheckoutController extends Controller
                     'is_default' => false,
                     'is_active' => true,
                 ]);
-                
-                // Recalculate totals
+
                 $calculations = $this->cartCalculationService->calculateCartTotals(
                     $cartItems->toArray(),
                     Auth::id()
                 );
-                
-                // Add delivery fee from Stripe metadata or session
-                $deliveryFee = isset($session->metadata['carrier_cost']) 
-                    ? floatval($session->metadata['carrier_cost']) 
+                $deliveryFee = isset($session->metadata['carrier_cost'])
+                    ? (float) $session->metadata['carrier_cost']
                     : 0;
-                
                 $calculations['delivery_fee'] = $deliveryFee;
                 $calculations['total'] = $calculations['subtotal'] - $calculations['discount'] + $deliveryFee + $calculations['tax'];
-                
-                // Reconstruct checkout data
+
                 $checkoutData = [
                     'address_data' => [
                         'street_address' => $shippingAddress->line1,
@@ -416,24 +407,39 @@ class CheckoutController extends Controller
                     'carrier_cost' => $session->metadata['carrier_cost'] ?? null,
                     'discount_code' => null,
                 ];
-                
-                \Log::info('Successfully reconstructed checkout data', [
-                    'cart_items_count' => count($cartItems),
-                    'total' => $calculations['total'],
-                    'carrier_name' => $checkoutData['carrier_name'],
-                ]);
+            }
+
+            // Resolve user: authenticated or find-or-create for guest
+            if (Auth::check()) {
+                $orderUserId = Auth::id();
+                $guestUser = null;
+            } else {
+                $guestEmail = $checkoutData['guest_email'] ?? $session->customer_details->email ?? $session->customer_email ?? null;
+                if (! $guestEmail) {
+                    \Log::error('Guest checkout: no email in session or Stripe', ['session_id' => $sessionId]);
+                    ProcessRefundJob::dispatch($session->payment_intent, null, 'Guest checkout email missing');
+                    return redirect('/checkout')->with('error', 'Checkout data invalid. Refund will be processed automatically.');
+                }
+                [$guestUser, $wasCreated] = $this->guestCheckoutService->findOrCreateUserByEmail(
+                    $guestEmail,
+                    $checkoutData['guest_name'] ?? null
+                );
+                $orderUserId = $guestUser->id;
             }
 
             // Generate idempotency key from session ID
             $idempotencyKey = 'checkout_' . $sessionId;
-            
-            // Check for duplicate order using idempotency
+
             $idempotencyRecord = PaymentIdempotency::check($idempotencyKey);
             if ($idempotencyRecord && $idempotencyRecord->status === 'completed') {
                 \Log::info('Duplicate order prevented by idempotency', [
                     'idempotency_key' => $idempotencyKey,
                     'existing_order_id' => $idempotencyRecord->order_id,
                 ]);
+
+                if (! Auth::check() && $guestUser) {
+                    Auth::login($guestUser, true);
+                }
 
                 return redirect('/orders/' . $idempotencyRecord->order_id)->with([
                     'success' => 'Order already processed',
@@ -442,11 +448,10 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            // Create idempotency record
-            if (!$idempotencyRecord) {
+            if (! $idempotencyRecord) {
                 $idempotencyRecord = PaymentIdempotency::createOrRetrieve(
                     $idempotencyKey,
-                    Auth::id(),
+                    $orderUserId,
                     ['session_id' => $sessionId, 'payment_intent' => $session->payment_intent]
                 );
             }
@@ -463,11 +468,10 @@ class CheckoutController extends Controller
             DB::beginTransaction();
 
             // STEP 1: Create order FIRST
-            // Temporarily unguard to allow setting protected fields
-            $order = Order::unguarded(function () use ($checkoutData) {
+            $order = Order::unguarded(function () use ($checkoutData, $orderUserId) {
                 return Order::create([
                     'order_number' => Order::generateOrderNumber(),
-                    'user_id' => Auth::id(),
+                    'user_id' => $orderUserId,
                     'user_address_id' => $checkoutData['user_address_id'],
                     'status' => 'confirmed',
                     'total_amount' => $checkoutData['calculations']['total'],
@@ -493,8 +497,7 @@ class CheckoutController extends Controller
             ]);
 
             // STEP 2: Create payment transaction with order_id
-            // Temporarily unguard to allow setting protected fields
-            $paymentTransaction = PaymentTransaction::unguarded(function () use ($checkoutData, $session, $sessionId, $idempotencyKey, $order) {
+            $paymentTransaction = PaymentTransaction::unguarded(function () use ($checkoutData, $session, $sessionId, $idempotencyKey, $order, $orderUserId) {
                 return PaymentTransaction::create([
                     'order_id' => $order->id,
                     'amount' => $checkoutData['calculations']['total'],
@@ -503,7 +506,7 @@ class CheckoutController extends Controller
                     'status' => 'completed',
                     'metadata' => json_encode([
                         'session_id' => $sessionId,
-                        'user_id' => Auth::id(),
+                        'user_id' => $orderUserId,
                         'idempotency_key' => $idempotencyKey,
                     ]),
                 ]);
@@ -568,18 +571,28 @@ class CheckoutController extends Controller
                 'order_number' => $order->order_number,
             ], $session->payment_intent);
 
-            // Clear cart
-            CartItem::where('user_id', Auth::id())->delete();
+            // Clear cart: authenticated user's cart or guest's anonymous cart
+            if (Auth::check()) {
+                CartItem::where('user_id', $orderUserId)->delete();
+            } else {
+                $anonymousCart = AnonymousCart::getOrCreateForSession(Session::getId());
+                $anonymousCart->clear();
+            }
 
             // Clear checkout session data
             session()->forget('checkout_data');
 
             DB::commit();
 
+            // Log in guest so they can see their order
+            if (isset($guestUser) && $guestUser) {
+                Auth::login($guestUser, true);
+            }
+
             // Send order confirmation notification (after commit)
             try {
                 $this->notificationService->create(
-                    userId: Auth::id(),
+                    userId: $orderUserId,
                     type: 'order_confirmed',
                     title: 'Order Confirmed',
                     message: "Your order #{$order->order_number} has been confirmed and is being processed.",

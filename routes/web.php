@@ -122,10 +122,14 @@ Route::get('/checkout', [App\Http\Controllers\CheckoutController::class, 'index'
 // Checkout auth: sign in or create account from checkout page (guests only)
 Route::middleware(['guest', 'throttle:auth'])->post('/checkout/auth', [App\Http\Controllers\CheckoutAuthController::class, 'store'])->name('checkout.auth');
 
-// Checkout routes (auth required for payment, payment rate limiting)
-Route::middleware(['auth', 'throttle:payment'])->group(function () {
+// Checkout create-session and success: allow both guest and authenticated (guest checkout)
+Route::middleware(['throttle:payment'])->group(function () {
     Route::post('/checkout/create-session', [App\Http\Controllers\CheckoutController::class, 'createCheckoutSession'])->name('checkout.create-session');
     Route::get('/checkout/success', [App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
+});
+
+// Checkout store (auth required)
+Route::middleware(['auth', 'throttle:payment'])->group(function () {
     Route::post('/checkout', [App\Http\Controllers\CheckoutController::class, 'store'])->name('checkout.store');
     
     // Debug route for testing checkout success

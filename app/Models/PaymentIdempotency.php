@@ -46,9 +46,10 @@ class PaymentIdempotency extends Model
     }
 
     /**
-     * Create or retrieve idempotency record
+     * Create or retrieve idempotency record.
+     * user_id may be null for guest checkout until user is resolved after payment.
      */
-    public static function createOrRetrieve(string $key, int $userId, array $requestData): self
+    public static function createOrRetrieve(string $key, ?int $userId, array $requestData): self
     {
         $existing = self::check($key);
 

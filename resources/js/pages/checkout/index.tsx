@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, CreditCard, MapPin, Phone, ShoppingBag, CheckCircle, ChevronRight, Search, MapPinIcon, LogIn } from 'lucide-react';
+import { ArrowLeft, CreditCard, MapPin, Phone, ShoppingBag, CheckCircle, ChevronRight, Search, MapPinIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -112,13 +112,6 @@ export default function CheckoutPage({
     const [isCalculatingDelivery, setIsCalculatingDelivery] = useState(false);
     const [shippingConfigError, setShippingConfigError] = useState(false);
     
-    // Guest checkout auth form (sign in or create account)
-    const guestAuthForm = useForm({
-        email: '',
-        password: '',
-        name: '',
-    });
-
     // Get flash messages from Inertia
     const { flash } = usePage().props as any;
     
@@ -174,9 +167,11 @@ export default function CheckoutPage({
                 carrier: selectedCarrier,
                 discount_code: discountCode,
                 payment_intent_id: '',
-                // Only keep delivery instructions
                 shipping_instructions: '',
-                save_address: false, // New field to control address saving
+                save_address: false,
+                // Guest checkout: email required, name optional
+                email: '',
+                name: '',
             });
 
     // Calculate delivery methods when address changes
@@ -466,6 +461,14 @@ export default function CheckoutPage({
     const validateCheckoutForm = () => {
         const errors: string[] = [];
 
+        // 0. Guest: email required
+        if (guest && !data.email?.trim()) {
+            errors.push('Email is required');
+        }
+        if (guest && data.email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+            errors.push('Please enter a valid email address');
+        }
+
         // 1. Address validation
         if (!data.street_address?.trim()) {
             errors.push('Street address is required');
@@ -537,7 +540,7 @@ export default function CheckoutPage({
             setShowValidationSummary(true);
             
             // Mark all fields as touched to show errors
-            setTouchedFields(new Set(['street_address', 'city', 'state', 'zip_code', 'type']));
+            setTouchedFields(new Set(guest ? ['email', 'street_address', 'city', 'state', 'zip_code', 'type'] : ['street_address', 'city', 'state', 'zip_code', 'type']));
             
             // Show the first error as a toast
             toast.error('Please fix the errors below', {
@@ -570,8 +573,7 @@ export default function CheckoutPage({
         // Create Stripe Checkout Session and redirect
         setIsProcessing(true);
         
-        // Debug what we're sending
-        const requestData = {
+        const requestData: Record<string, unknown> = {
             type: data.type,
             label: data.label,
             street_address: data.street_address,
@@ -587,6 +589,10 @@ export default function CheckoutPage({
             discount_code: discountCode,
             save_address: data.save_address,
         };
+        if (guest) {
+            requestData.email = data.email;
+            requestData.name = data.name || undefined;
+        }
         
         console.log('Checkout request data:', requestData);
         console.log('Selected carrier info:', selectedCarrierInfo);
@@ -669,92 +675,50 @@ export default function CheckoutPage({
                     </div> */}
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Guest: Sign in or create account */}
+                        {/* Guest: Contact info (no login required) */}
                         {guest && (
                             <div className="lg:col-span-2">
                                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Sign in or create account</h2>
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Contact information</h2>
                                     <p className="text-gray-600 dark:text-gray-400 mb-6">
-                                        Enter your email and password to continue. New to BarfFoods? Add your name below to create an account.
+                                        We'll use this email for your order confirmation and to create or link your account.
                                     </p>
-                                    <form
-                                        onSubmit={(e) => {
-                                            e.preventDefault();
-                                            guestAuthForm.post('/checkout/auth', { preserveScroll: true });
-                                        }}
-                                        className="space-y-4"
-                                    >
+                                    <div className="space-y-4">
                                         <div>
-                                            <Label htmlFor="guest_email" className="text-gray-900 dark:text-white">Email</Label>
+                                            <Label htmlFor="guest_email" className="text-gray-900 dark:text-white">Email <span className="text-red-500">*</span></Label>
                                             <Input
                                                 id="guest_email"
                                                 type="email"
-                                                value={guestAuthForm.data.email}
-                                                onChange={(e) => guestAuthForm.setData('email', e.target.value)}
-                                                className="mt-1"
+                                                value={data.email}
+                                                onChange={(e) => setData('email', e.target.value)}
+                                                onBlur={() => markFieldAsTouched('email')}
+                                                className={getFieldClassName('email', 'mt-1')}
                                                 placeholder="you@example.com"
                                                 required
                                                 autoComplete="email"
                                             />
-                                            {guestAuthForm.errors.email && (
-                                                <p className="text-red-600 dark:text-red-400 text-sm mt-1">{guestAuthForm.errors.email}</p>
+                                            {getFieldError('email') && (
+                                                <p className="text-red-600 dark:text-red-400 text-sm mt-1">{getFieldError('email')}</p>
                                             )}
                                         </div>
                                         <div>
-                                            <Label htmlFor="guest_password" className="text-gray-900 dark:text-white">Password</Label>
-                                            <Input
-                                                id="guest_password"
-                                                type="password"
-                                                value={guestAuthForm.data.password}
-                                                onChange={(e) => guestAuthForm.setData('password', e.target.value)}
-                                                className="mt-1"
-                                                placeholder="••••••••"
-                                                required
-                                                autoComplete="current-password"
-                                            />
-                                            {guestAuthForm.errors.password && (
-                                                <p className="text-red-600 dark:text-red-400 text-sm mt-1">{guestAuthForm.errors.password}</p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="guest_name" className="text-gray-900 dark:text-white">Full name <span className="text-gray-400 font-normal">(optional – for new accounts)</span></Label>
+                                            <Label htmlFor="guest_name" className="text-gray-900 dark:text-white">Full name <span className="text-gray-400 font-normal">(optional)</span></Label>
                                             <Input
                                                 id="guest_name"
                                                 type="text"
-                                                value={guestAuthForm.data.name}
-                                                onChange={(e) => guestAuthForm.setData('name', e.target.value)}
+                                                value={data.name}
+                                                onChange={(e) => setData('name', e.target.value)}
                                                 className="mt-1"
                                                 placeholder="Jane Doe"
                                                 autoComplete="name"
                                             />
-                                            {guestAuthForm.errors.name && (
-                                                <p className="text-red-600 dark:text-red-400 text-sm mt-1">{guestAuthForm.errors.name}</p>
-                                            )}
                                         </div>
-                                        <Button
-                                            type="submit"
-                                            disabled={guestAuthForm.processing}
-                                            className="w-full bg-green-600 hover:bg-green-700"
-                                        >
-                                            {guestAuthForm.processing ? (
-                                                <span className="flex items-center justify-center gap-2">
-                                                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                                                    Continuing...
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center justify-center gap-2">
-                                                    <LogIn className="h-4 w-4" />
-                                                    Continue to checkout
-                                                </span>
-                                            )}
-                                        </Button>
-                                    </form>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Left Column - Shipping Details (authenticated only) */}
-                        {!guest && (
+                        {/* Shipping Details (guest and authenticated) */}
                         <div className="lg:col-span-2 space-y-8">
                             {/* Shipping Address */}
                             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -1270,7 +1234,6 @@ export default function CheckoutPage({
                                 )}
                             </div>
                         </div>
-                        )}
 
                         {/* Right Column - Cart Summary */}
                         <div className="lg:col-span-1">
@@ -1282,8 +1245,8 @@ export default function CheckoutPage({
                                     <div className="space-y-4 mb-6">
                                         {cartItems.map((item) => (
                                             <div key={item.id} className="flex items-center space-x-3">
-                                                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                                    {item.product.image && item.product.image.startsWith('http') ? (
+                                                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
+                                                    {item.product.image && (item.product.image.startsWith('http') || item.product.image.startsWith('/')) ? (
                                                         <img
                                                             src={item.product.image}
                                                             alt={item.product.name}
@@ -1291,7 +1254,7 @@ export default function CheckoutPage({
                                                         />
                                                     ) : (
                                                         <div className="text-2xl opacity-80">
-                                                            {item.product.image || '📦'}
+                                                            📦
                                                         </div>
                                                     )}
                                                 </div>
@@ -1374,8 +1337,7 @@ export default function CheckoutPage({
                                         </div>
                                     </div>
 
-                                    {/* Continue to Payment Button (authenticated only) */}
-                                    {!guest && (
+                                    {/* Continue to Payment Button */}
                                     <Button
                                         onClick={handleSubmit}
                                         disabled={processing || isProcessing || validateCheckoutForm().length > 0}
@@ -1396,7 +1358,6 @@ export default function CheckoutPage({
                                             'Continue to Payment'
                                         )}
                                     </Button>
-                                    )}
                                 </div>
                             </div>
                         </div>

@@ -294,8 +294,12 @@ export default function OrderShow({ order, progressData }: OrderShowProps) {
                                                 <div className="space-y-4">
                                                     {storeGroup.items.map((item) => (
                                                         <div key={item.id} className="flex items-center space-x-4">
-                                                            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                                                <span className="text-2xl">{item.product.image}</span>
+                                                            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
+                                                                {item.product.image && (item.product.image.startsWith('http') || item.product.image.startsWith('/')) ? (
+                                                                    <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover rounded-lg" />
+                                                                ) : (
+                                                                    <span className="text-2xl">📦</span>
+                                                                )}
                                                             </div>
                                                             <div className="flex-1">
                                                                 <h4 className="font-semibold text-gray-900 dark:text-white">{item.product.name}</h4>
@@ -364,8 +368,12 @@ export default function OrderShow({ order, progressData }: OrderShowProps) {
                                         <div className="space-y-4">
                                             {order.items_by_store && Array.isArray(order.items_by_store) && order.items_by_store[0]?.items?.map((item) => (
                                                 <div key={item.id} className="flex items-center space-x-4">
-                                                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                                        <span className="text-2xl">{item.product.image}</span>
+                                                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
+                                                        {item.product.image && (item.product.image.startsWith('http') || item.product.image.startsWith('/')) ? (
+                                                            <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover rounded-lg" />
+                                                        ) : (
+                                                            <span className="text-2xl">📦</span>
+                                                        )}
                                                     </div>
                                                     <div className="flex-1">
                                                         <h4 className="font-semibold text-gray-900 dark:text-white">{item.product.name}</h4>

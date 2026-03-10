@@ -43,7 +43,7 @@ export default function CartItemCard({ item, onQuantityChange, onRemoveItem }: C
             <div className="flex items-center gap-4">
                 {/* Product Image */}
                 <div className="relative flex-shrink-0">
-                    {item.product.image && item.product.image.startsWith('http') ? (
+                    {item.product.image && (item.product.image.startsWith('http') || item.product.image.startsWith('/')) ? (
                         <img
                             src={item.product.image}
                             alt={item.product.name}
@@ -52,7 +52,7 @@ export default function CartItemCard({ item, onQuantityChange, onRemoveItem }: C
                         />
                     ) : (
                         <div className="w-16 h-16 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-2xl">
-                            {item.product.image || '📦'}
+                            📦
                         </div>
                     )}
                     {hasDiscount && (
