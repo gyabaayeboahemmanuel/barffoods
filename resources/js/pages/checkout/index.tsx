@@ -557,8 +557,8 @@ export default function CheckoutPage({
             setTouchedFields(new Set(guest ? ['email', 'street_address', 'city', 'state', 'zip_code', 'type'] : ['street_address', 'city', 'state', 'zip_code', 'type']));
             
             // Show the first error as a toast
-            toast.error('Please fix the errors below', {
-                description: `${errors.length} error${errors.length > 1 ? 's' : ''} found`
+            toast.warning('A few details are missing', {
+                description: 'Please complete the required fields below to continue.'
             });
             
             // Scroll to validation summary
@@ -783,9 +783,9 @@ export default function CheckoutPage({
                                                 </div>
                                                 <div className="ml-3 flex-1">
                                                     <h3 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-2">
-                                                        {validationErrors.length === 1 
-                                                            ? 'Please fix the following issue:' 
-                                                            : `Please fix the following ${validationErrors.length} issues:`
+                                                        {validationErrors.length === 1
+                                                            ? 'One more thing needed:'
+                                                            : 'A few things to complete:'
                                                         }
                                                     </h3>
                                                     <ul className="text-sm text-red-700 dark:text-red-300 space-y-1.5 list-disc list-inside">
@@ -1374,7 +1374,7 @@ export default function CheckoutPage({
                                                 Creating Checkout...
                                             </div>
                                         ) : validateCheckoutForm().length > 0 ? (
-                                            `Fix ${validateCheckoutForm().length} Error${validateCheckoutForm().length > 1 ? 's' : ''} to Continue`
+                                            'Complete the required details above'
                                         ) : (
                                             'Continue to Payment'
                                         )}
