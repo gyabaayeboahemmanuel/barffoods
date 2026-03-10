@@ -427,6 +427,20 @@ export default function CheckoutPage({
     
     const finalTotal = calculations.subtotal - calculations.discount + totalDeliveryCost + calculations.tax;
 
+    // Group cart items by store for display
+    const cartItemsByStore = React.useMemo(() => {
+        const groups: Record<string, { storeId: string; storeName: string; items: typeof cartItems }> = {};
+        cartItems.forEach((item) => {
+            const storeId = String(item.product?.store?.id ?? 'unknown');
+            const storeName = item.product?.store?.name ?? 'Store';
+            if (!groups[storeId]) {
+                groups[storeId] = { storeId, storeName, items: [] };
+            }
+            groups[storeId].items.push(item);
+        });
+        return Object.values(groups);
+    }, [cartItems]);
+
     // Validation state
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
     const [showValidationSummary, setShowValidationSummary] = useState(false);
@@ -1241,37 +1255,44 @@ export default function CheckoutPage({
                                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Your Cart</h2>
                                     
-                                    {/* Cart Items */}
+                                    {/* Cart Items - grouped by store */}
                                     <div className="space-y-4 mb-6">
-                                        {cartItems.map((item) => (
-                                            <div key={item.id} className="flex items-center space-x-3">
-                                                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
-                                                    {item.product.image && (item.product.image.startsWith('http') || item.product.image.startsWith('/')) ? (
-                                                        <img
-                                                            src={item.product.image}
-                                                            alt={item.product.name}
-                                                            className="w-full h-full object-cover rounded-lg"
-                                                        />
-                                                    ) : (
-                                                        <div className="text-2xl opacity-80">
-                                                            📦
+                                        {cartItemsByStore.map((group) => (
+                                            <div key={group.storeId} className="space-y-3">
+                                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                                    {group.storeName}
+                                                </p>
+                                                {group.items.map((item) => (
+                                                    <div key={item.id} className="flex items-center space-x-3">
+                                                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                            {item.product.image && (item.product.image.startsWith('http') || item.product.image.startsWith('/')) ? (
+                                                                <img
+                                                                    src={item.product.image}
+                                                                    alt={item.product.name}
+                                                                    className="w-full h-full object-cover rounded-lg"
+                                                                />
+                                                            ) : (
+                                                                <div className="text-2xl opacity-80">
+                                                                    📦
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">
-                                                        {item.product.name}
-                                                    </h4>
-                                                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                                                        {item.product.category?.name || 'Category'}
-                                                    </p>
-                                                    <p className="font-medium text-gray-900 dark:text-white">
-                                                        ${typeof item.product.price === 'string' ? parseFloat(item.product.price) : item.product.price}
-                                                    </p>
-                                                </div>
-                                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                                    Qty: {item.quantity}
-                                                </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="font-medium text-gray-900 dark:text-white text-sm">
+                                                                {item.product.name}
+                                                            </h4>
+                                                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                                                                {item.product.category?.name || 'Category'}
+                                                            </p>
+                                                            <p className="font-medium text-gray-900 dark:text-white">
+                                                                ${typeof item.product.price === 'string' ? parseFloat(item.product.price) : item.product.price}
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
+                                                            Qty: {item.quantity}
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         ))}
                                     </div>

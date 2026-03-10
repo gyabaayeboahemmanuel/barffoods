@@ -168,10 +168,10 @@ export default function CartPage({
                                         </div>
                                         <div>
                                             <p className="text-base sm:text-lg font-semibold text-amber-900 dark:text-amber-100 leading-snug">
-                                                Multi-store order: Items from {storeCount} different stores.
+                                                Multi-store order: You ordered items from {storeCount} different stores.
                                             </p>
                                             <p className="mt-2 text-sm sm:text-base text-amber-800 dark:text-amber-200">
-                                                Shipping will be calculated separately for each store at checkout.
+                                                Shipping is calculated once for your entire order based on your address and the items in your cart.
                                             </p>
                                         </div>
                                     </div>
@@ -187,15 +187,24 @@ export default function CartPage({
                                     </p>
                                 </div>
 
-                                {/* Cart Items */}
-                                <div className="space-y-4">
-                                    {currentCartItems.map((item) => (
-                                        <CartItemCard
-                                            key={item.id}
-                                            item={item}
-                                            onQuantityChange={handleQuantityChange}
-                                            onRemoveItem={handleRemoveItem}
-                                        />
+                                {/* Cart Items - grouped by store */}
+                                <div className="space-y-8">
+                                    {Object.values(groupedItems).map((group) => (
+                                        <div key={group.storeId} className="space-y-4">
+                                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                                                {group.storeName}
+                                            </h2>
+                                            <div className="space-y-4">
+                                                {group.items.map((item) => (
+                                                    <CartItemCard
+                                                        key={item.id}
+                                                        item={item}
+                                                        onQuantityChange={handleQuantityChange}
+                                                        onRemoveItem={handleRemoveItem}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
 
