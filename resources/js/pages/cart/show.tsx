@@ -168,10 +168,10 @@ export default function CartPage({
                                         </div>
                                         <div>
                                             <p className="text-base sm:text-lg font-semibold text-amber-900 dark:text-amber-100 leading-snug">
-                                                Multi-store order: You ordered items from {storeCount} different stores.
+                                                Ordering from {storeCount} different stores
                                             </p>
                                             <p className="mt-2 text-sm sm:text-base text-amber-800 dark:text-amber-200">
-                                                Shipping is calculated once for your entire order based on your address and the items in your cart.
+                                                Each store ships from a different location. Shipping costs may increase when you order from multiple stores. To save on shipping, consider removing items or sticking to one store when possible.
                                             </p>
                                         </div>
                                     </div>

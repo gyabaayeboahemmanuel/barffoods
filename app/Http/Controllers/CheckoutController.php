@@ -127,6 +127,10 @@ class CheckoutController extends Controller
             'carrier_cost' => 'nullable|numeric',
             'discount_code' => 'nullable|string|max:50',
             'save_address' => 'boolean',
+            'shipping_breakdown' => 'nullable|array',
+            'shipping_breakdown.*.store_id' => 'required_with:shipping_breakdown|string',
+            'shipping_breakdown.*.store_name' => 'required_with:shipping_breakdown|string',
+            'shipping_breakdown.*.cost' => 'required_with:shipping_breakdown|numeric|min:0',
         ];
 
         if (! Auth::check()) {
@@ -194,6 +198,17 @@ class CheckoutController extends Controller
                 $checkoutData['guest_name'] = $request->input('name');
             }
 
+            // When multi-store shipping breakdown is sent, use it for delivery_fee and total
+            $shippingBreakdownForSession = $request->input('shipping_breakdown', []);
+            if (! empty($shippingBreakdownForSession) && is_array($shippingBreakdownForSession)) {
+                $totalDeliveryFromBreakdown = array_sum(array_map(function ($row) {
+                    return (float) ($row['cost'] ?? 0);
+                }, $shippingBreakdownForSession));
+                $checkoutData['calculations']['delivery_fee'] = $totalDeliveryFromBreakdown;
+                $checkoutData['calculations']['total'] = $calculations['subtotal'] - $calculations['discount']
+                    + $totalDeliveryFromBreakdown + $calculations['tax'];
+            }
+
             session(['checkout_data' => $checkoutData]);
 
             $lineItems = [];
@@ -217,12 +232,39 @@ class CheckoutController extends Controller
                 ];
             }
 
-            if ($calculations['delivery_fee'] > 0) {
+            // Multi-store: separate shipping line per store (Shipping 1, Shipping 2, ...); otherwise one Delivery Fee
+            $shippingBreakdown = $request->input('shipping_breakdown', []);
+            if (! empty($shippingBreakdown) && is_array($shippingBreakdown)) {
+                foreach ($shippingBreakdown as $index => $row) {
+                    $cost = (float) ($row['cost'] ?? 0);
+                    if ($cost <= 0) {
+                        continue;
+                    }
+                    $storeName = $row['store_name'] ?? 'Store ' . ($index + 1);
+                    $lineItems[] = [
+                        'price_data' => [
+                            'currency' => 'usd',
+                            'product_data' => ['name' => 'Shipping ' . ($index + 1) . ' (' . $storeName . ')'],
+                            'unit_amount' => $this->convertToCents($cost),
+                        ],
+                        'quantity' => 1,
+                    ];
+                }
+            } elseif ($calculations['delivery_fee'] > 0) {
                 $lineItems[] = [
                     'price_data' => [
                         'currency' => 'usd',
                         'product_data' => ['name' => 'Delivery Fee'],
                         'unit_amount' => $this->convertToCents($calculations['delivery_fee']),
+                    ],
+                    'quantity' => 1,
+                ];
+            } elseif ($request->has('carrier_cost') && $request->carrier_cost > 0) {
+                $lineItems[] = [
+                    'price_data' => [
+                        'currency' => 'usd',
+                        'product_data' => ['name' => 'Delivery Fee'],
+                        'unit_amount' => $this->convertToCents((float) $request->carrier_cost),
                     ],
                     'quantity' => 1,
                 ];

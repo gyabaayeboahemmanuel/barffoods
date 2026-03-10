@@ -36,17 +36,30 @@ class ShippingController extends Controller
                 'zip_code' => $request->zip_code,
             ];
 
-            // Get cart items for package dimension calculation
+            // Get cart items for package dimension calculation and per-store breakdown
             $cartItems = [];
             if (auth()->check()) {
-                $cartItems = auth()->user()->cartItems()->with('product')->get()->toArray();
+                $cartItems = auth()->user()->cartItems()->with('product.store')->get()->toArray();
             } else {
-                // For anonymous users, get cart from session
+                // For anonymous users, build cart items from AnonymousCart cart_data
                 $sessionId = session()->getId();
-                $cartItems = \App\Models\AnonymousCart::where('session_id', $sessionId)
-                    ->with('product')
-                    ->get()
-                    ->toArray();
+                $anonymousCart = \App\Models\AnonymousCart::where('session_id', $sessionId)->first();
+                if ($anonymousCart && !empty($anonymousCart->cart_data)) {
+                    $productIds = array_column($anonymousCart->cart_data, 'product_id');
+                    $products = \App\Models\Product::with('store')->whereIn('id', $productIds)->get()->keyBy('id');
+                    foreach ($anonymousCart->cart_data as $item) {
+                        $product = $products->get($item['product_id'] ?? null);
+                        if ($product) {
+                            $cartItems[] = [
+                                'quantity' => (int) ($item['quantity'] ?? 1),
+                                'product' => [
+                                    'store_id' => $product->store_id,
+                                    'store' => $product->store ? ['id' => (string) $product->store->id, 'name' => $product->store->name] : null,
+                                ],
+                            ];
+                        }
+                    }
+                }
             }
             
             $result = $this->shippingService->getDeliveryMethods($address, $cartItems);
@@ -55,6 +68,7 @@ class ShippingController extends Controller
                 'success' => true,
                 'delivery_methods' => $result['delivery_methods'],
                 'carriers' => $result['carriers'],
+                'shipping_breakdown' => $result['shipping_breakdown'] ?? [],
             ]);
 
         } catch (\Exception $e) {

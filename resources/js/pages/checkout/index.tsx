@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, CreditCard, MapPin, Phone, ShoppingBag, CheckCircle, ChevronRight, Search, MapPinIcon } from 'lucide-react';
+import { ArrowLeft, CreditCard, MapPin, Phone, ShoppingBag, CheckCircle, ChevronRight, Search, MapPinIcon, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -111,7 +111,8 @@ export default function CheckoutPage({
     const [carriers, setCarriers] = useState<Carrier[]>([]);
     const [isCalculatingDelivery, setIsCalculatingDelivery] = useState(false);
     const [shippingConfigError, setShippingConfigError] = useState(false);
-    
+    const [shippingBreakdown, setShippingBreakdown] = useState<Array<{ store_id: string; store_name: string; item_count: number }>>([]);
+
     // Get flash messages from Inertia
     const { flash } = usePage().props as any;
     
@@ -203,7 +204,8 @@ export default function CheckoutPage({
                 if (result.success) {
                     setDeliveryMethods(result.delivery_methods || []);
                     setCarriers(result.carriers || []);
-                    
+                    setShippingBreakdown(result.shipping_breakdown || []);
+
                     // Check if we got empty arrays (EasyPost not configured)
                     if ((result.delivery_methods || []).length === 0 && (result.carriers || []).length === 0) {
                         setShippingConfigError(true);
@@ -427,6 +429,30 @@ export default function CheckoutPage({
     
     const finalTotal = calculations.subtotal - calculations.discount + totalDeliveryCost + calculations.tax;
 
+    // Per-store shipping costs for multi-store (split total delivery cost by item count; sum = totalDeliveryCost exactly)
+    const shippingBreakdownWithCosts = React.useMemo(() => {
+        if (shippingBreakdown.length <= 1 || totalDeliveryCost <= 0) return [];
+        const totalItems = shippingBreakdown.reduce((sum, s) => sum + s.item_count, 0);
+        if (totalItems === 0) return [];
+        const totalCents = Math.round(totalDeliveryCost * 100);
+        const shares = shippingBreakdown.map((store) =>
+            Math.floor((totalCents * store.item_count) / totalItems)
+        );
+        let remainder = totalCents - shares.reduce((a, b) => a + b, 0);
+        return shippingBreakdown.map((store, index) => {
+            let costCents = shares[index];
+            if (remainder > 0) {
+                costCents += 1;
+                remainder -= 1;
+            }
+            return {
+                ...store,
+                cost: costCents / 100,
+                label: `Shipping ${index + 1} (${store.store_name})`,
+            };
+        });
+    }, [shippingBreakdown, totalDeliveryCost]);
+
     // Group cart items by store for display
     const cartItemsByStore = React.useMemo(() => {
         const groups: Record<string, { storeId: string; storeName: string; items: typeof cartItems }> = {};
@@ -607,7 +633,14 @@ export default function CheckoutPage({
             requestData.email = data.email;
             requestData.name = data.name || undefined;
         }
-        
+        if (shippingBreakdownWithCosts.length > 1) {
+            requestData.shipping_breakdown = shippingBreakdownWithCosts.map((row) => ({
+                store_id: row.store_id,
+                store_name: row.store_name,
+                cost: row.cost,
+            }));
+        }
+
         console.log('Checkout request data:', requestData);
         console.log('Selected carrier info:', selectedCarrierInfo);
         console.log('Available carriers:', carriers);
@@ -687,6 +720,22 @@ export default function CheckoutPage({
                             <span className="text-gray-400">Payment</span>
                         </nav>
                     </div> */}
+
+                    {cartItemsByStore.length > 1 && (
+                        <div className="mb-6 rounded-xl border-2 border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/30 p-5 sm:p-6 shadow-sm flex gap-4">
+                            <div className="flex-shrink-0">
+                                <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 text-amber-600 dark:text-amber-400" aria-hidden />
+                            </div>
+                            <div>
+                                <p className="text-base sm:text-lg font-semibold text-amber-900 dark:text-amber-100 leading-snug">
+                                    Ordering from {cartItemsByStore.length} different stores
+                                </p>
+                                <p className="mt-2 text-sm sm:text-base text-amber-800 dark:text-amber-200">
+                                    Each store ships from a different location. Shipping costs may be higher. You'll see separate shipping charges per store below. To save, consider sticking to one store when possible.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Guest: Contact info (no login required) */}
@@ -1334,15 +1383,24 @@ export default function CheckoutPage({
                                             </div>
                                         )}
                                         
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600 dark:text-gray-400">Delivery</span>
-                                            <span className="font-medium text-gray-900 dark:text-white">
-                                                {selectedDeliveryMethod === 'fast_delivery' ? `$${totalDeliveryCost.toFixed(2)}` : 
-                                                 selectedDeliveryMethod === 'shipping' && selectedCarrierInfo ? `$${totalDeliveryCost.toFixed(2)}` : 
-                                                 selectedDeliveryMethod === 'shipping' && !(data.street_address && data.city && data.state && data.zip_code) ? 'Enter address' :
-                                                 'Calculating...'}
-                                            </span>
-                                        </div>
+                                        {shippingBreakdownWithCosts.length > 1 ? (
+                                            shippingBreakdownWithCosts.map((row) => (
+                                                <div key={row.store_id} className="flex justify-between">
+                                                    <span className="text-gray-600 dark:text-gray-400 text-sm">{row.label}</span>
+                                                    <span className="font-medium text-gray-900 dark:text-white">${row.cost.toFixed(2)}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600 dark:text-gray-400">Delivery</span>
+                                                <span className="font-medium text-gray-900 dark:text-white">
+                                                    {selectedDeliveryMethod === 'fast_delivery' ? `$${totalDeliveryCost.toFixed(2)}` :
+                                                     selectedDeliveryMethod === 'shipping' && selectedCarrierInfo ? `$${totalDeliveryCost.toFixed(2)}` :
+                                                     selectedDeliveryMethod === 'shipping' && !(data.street_address && data.city && data.state && data.zip_code) ? 'Enter address' :
+                                                     'Calculating...'}
+                                                </span>
+                                            </div>
+                                        )}
                                         
                                         
                                         <div className="flex justify-between">

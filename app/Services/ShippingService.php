@@ -110,9 +110,13 @@ class ShippingService
                 ];
             }
 
+            // Build per-store breakdown for multi-store orders (so billing can show Shipping 1, Shipping 2, etc.)
+            $shippingBreakdown = $this->buildShippingBreakdownByStore($cartItems);
+
             return [
                 'delivery_methods' => $deliveryMethods,
                 'carriers' => $carriers,
+                'shipping_breakdown' => $shippingBreakdown,
             ];
 
         } catch (\Exception $e) {
@@ -433,6 +437,40 @@ class ShippingService
     public function trackShipment(string $trackingCode): array
     {
         return $this->easyPostService->trackShipment($trackingCode);
+    }
+
+    /**
+     * Build per-store breakdown for cart (for multi-store billing: Shipping 1, Shipping 2, etc.)
+     * Returns array of { store_id, store_name, item_count } so frontend can split shipping cost.
+     */
+    protected function buildShippingBreakdownByStore(array $cartItems): array
+    {
+        if (empty($cartItems)) {
+            return [];
+        }
+
+        $byStore = [];
+        foreach ($cartItems as $item) {
+            $product = $item['product'] ?? $item;
+            $storeId = $product['store_id'] ?? $product['store']['id'] ?? null;
+            $storeName = $product['store']['name'] ?? $product['store_name'] ?? 'Store';
+            $quantity = (int) ($item['quantity'] ?? 1);
+
+            if ($storeId === null) {
+                continue;
+            }
+            $storeId = (string) $storeId;
+            if (! isset($byStore[$storeId])) {
+                $byStore[$storeId] = [
+                    'store_id' => $storeId,
+                    'store_name' => $storeName,
+                    'item_count' => 0,
+                ];
+            }
+            $byStore[$storeId]['item_count'] += $quantity;
+        }
+
+        return array_values($byStore);
     }
 
     /**
