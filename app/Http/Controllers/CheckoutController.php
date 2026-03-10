@@ -198,14 +198,18 @@ class CheckoutController extends Controller
 
             $lineItems = [];
             foreach ($cartItems as $cartItem) {
+                $productData = [
+                    'name' => $cartItem['product']['name'],
+                    'images' => $this->getValidImageUrls($cartItem['product']['image']),
+                ];
+                $description = trim($cartItem['product']['description'] ?? '');
+                if ($description !== '') {
+                    $productData['description'] = $description;
+                }
                 $lineItems[] = [
                     'price_data' => [
                         'currency' => 'usd',
-                        'product_data' => [
-                            'name' => $cartItem['product']['name'],
-                            'description' => $cartItem['product']['description'] ?? '',
-                            'images' => $this->getValidImageUrls($cartItem['product']['image']),
-                        ],
+                        'product_data' => $productData,
                         'unit_amount' => $this->convertToCents($cartItem['product']['price']),
                     ],
                     'quantity' => $cartItem['quantity'],

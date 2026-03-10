@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { usePage } from '@inertiajs/react';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -160,6 +160,23 @@ export default function CartPage({
                             <EmptyCart />
                         ) : (
                             <div className="space-y-8">
+                                {/* Multi-store warning - prominent at top */}
+                                {isMultiStore && (
+                                    <div className="rounded-xl border-2 border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-900/30 p-5 sm:p-6 shadow-sm flex gap-4">
+                                        <div className="flex-shrink-0">
+                                            <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 text-amber-600 dark:text-amber-400" aria-hidden />
+                                        </div>
+                                        <div>
+                                            <p className="text-base sm:text-lg font-semibold text-amber-900 dark:text-amber-100 leading-snug">
+                                                Multi-store order: Items from {storeCount} different stores.
+                                            </p>
+                                            <p className="mt-2 text-sm sm:text-base text-amber-800 dark:text-amber-200">
+                                                Shipping will be calculated separately for each store at checkout.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Header */}
                                 <div className="text-center">
                                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -201,14 +218,6 @@ export default function CartPage({
                                             <span className="ml-2 font-medium text-gray-900 dark:text-white">${subtotal.toFixed(2)}</span>
                                         </div>
                                     </div>
-                                    {isMultiStore && (
-                                        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                                <strong>Multi-store order:</strong> Items from {storeCount} different stores. 
-                                                Shipping will be calculated separately for each store at checkout.
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* Action Buttons */}
