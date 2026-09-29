@@ -4,12 +4,13 @@
 # Run from your PC: .\server-setup.ps1
 
 $ErrorActionPreference = "Stop"
-$ServerUser = "root"
-$ServerHost = "gekymedia.com"
+$ServerUser = if ($env:VPS_USER) { $env:VPS_USER } else { "root" }
+$ServerHost = if ($env:VPS_HOST) { $env:VPS_HOST } else { "gekymedia.com" }
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host "Connecting server project to GitHub (keeping storage + .env)..." -ForegroundColor Cyan
 Write-Host "Server: ${ServerUser}@${ServerHost}" -ForegroundColor Gray
+Write-Host "(For a new Hostinger VPS, prefer .\deploy\hostinger\setup-site.ps1 — see docs/HOSTINGER_VPS_MIGRATION.md)" -ForegroundColor Gray
 Write-Host ""
 
 Set-Location $ScriptDir

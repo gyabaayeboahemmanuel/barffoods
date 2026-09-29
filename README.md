@@ -347,6 +347,9 @@ The system includes comprehensive test data:
 
 ## 🚀 Deployment
 
+### Hostinger VPS migration
+See [docs/HOSTINGER_VPS_MIGRATION.md](docs/HOSTINGER_VPS_MIGRATION.md) for moving off `gekymedia.com` onto a new Hostinger VPS (shared with Patrik Solutions if desired).
+
 ### Production Checklist
 - [ ] Set production environment variables
 - [ ] Configure SSL certificates
